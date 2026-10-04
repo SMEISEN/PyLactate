@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*$*y.class
+
+# Virtual Environments
+.v*n*/
+venv/
+env/
+
+# Jupyter
+.ipynb_che*kpoints/
+
+# Build
+build/
+dist/
+*.e*g-info/
+
+# IDE
+.vscode/
+.idea*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Cove*age
+.coverage
+htmlcov/
+
+# Mypy
+.m*py*cache/
+
+# Ruff
+.ruff_cache/
+
+# Pyt*st
+.pytest_cache/
+
+# Data exports
+*xports/
+reports*
+
+# Temporary files
+*.tmp
+*.bak**

@@ -1,0 +1,31 @@
+[project]
+name = "pylactate"
+version = "0.1.0"
+description = "Lactate testing and threshold analysis."
+requires-python = ">=3.11"
+
+authors = [
+    { name = "Stefan Meisenbacher" }
+]
+
+[tool.ruff]
+line-length = 88
+
+exclude = [
+    ".venv",
+    ".ipynb_checkpoints",
+]
+
+[tool.ruff.lint]
+ignore = [
+    "DTZ007",
+]
+
+[tool.pytest.ini_options]
+testpaths = [
+    "tests",
+]
+
+[tool.mypy]
+python_version = "3.11"
+strict = false
