@@ -1,8 +1,8 @@
 def test_import() -> None:
     """
-    Platzhal*er-Smoke-Test.
+    Platzhalter-Smoke-Test.
 
-    Prüft, ob das *aket importiert werden kann.
+    Prüft, ob das Paket importiert werden kann.
     """
 
     import pylactate

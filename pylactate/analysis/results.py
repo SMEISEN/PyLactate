@@ -3,14 +3,15 @@ from typing import Any
 
 import numpy as np
 
+from pylactate.model.enums import ThresholdType
+
 
 @dataclass(slots=True)
 class ThresholdResult:
-    """
-    Ergebnis einer LS-Methode.
-    """
 
     method_name: str
+
+    threshold_type: ThresholdType
 
     load: float
 
@@ -43,12 +44,16 @@ class FitResult:
 @dataclass(slots=True)
 class FitAnalysis:
     """
-    Ein Fit und dessen LS-Ergebnisse.
+    Ein Fit und dessen
+    Schwellenergebnisse.
     """
 
     fit_result: FitResult
 
-    thresholds: list[ThresholdResult]
+    thresholds: dict[
+        ThresholdType,
+        list[ThresholdResult],
+    ]
 
 
 @dataclass(slots=True)

@@ -14,3 +14,8 @@ class PointClass(str, Enum):
     LOAD = "load"
     AFTERLOAD = "afterload"
     FALSE = "false"
+
+
+class ThresholdType(Enum):
+    LT1 = "LT1"
+    LT2 = "LT2"
