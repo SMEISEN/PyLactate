@@ -7,6 +7,7 @@ from pylactate.analysis.results import (
     FitResult,
     ThresholdResult,
 )
+from pylactate.model.enums import PointClass
 from pylactate.thresholds.base import LT1Method
 
 
@@ -20,7 +21,12 @@ class Baseline05LT1Method(LT1Method):
         fit_result: FitResult,
     ) -> ThresholdResult:
 
-        baseline = float(fit_result.y_dense[0])
+        measurements = [
+            m
+            for m in context.session.measurements
+            if m.point_class == PointClass.LOAD
+        ]
+        baseline = measurements[0].record.lactate_value
         target = baseline + 0.5
 
         indices = np.where(

@@ -1,13 +1,15 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from pylactate.analysis.context import AnalysisContext
 from pylactate.analysis.results import (
     FitAnalysis,
     TestAnalysis,
 )
+from pylactate.plotting.test_plotter import TestPlotter
 from pylactate.fitting.base import FitStrategy
 from pylactate.model.enums import ThresholdType
 from pylactate.thresholds.base import LT1Method, LT2Method
+
 
 
 @dataclass(slots=True)
@@ -15,8 +17,9 @@ class Analyzer:
     """
     Führt die komplette Analyse eines Tests durch.
 
-    Für jede Fitstrategie werden sämtliche
-    LT1- und LT2-Methoden berechnet.
+    Das letzte Analyseergebnis wird intern gespeichert
+    und kann anschließend für Plotting oder weitere
+    Auswertungen verwendet werden.
     """
 
     context: AnalysisContext
@@ -26,6 +29,11 @@ class Analyzer:
     lt1_methods: list[LT1Method]
 
     lt2_methods: list[LT2Method]
+
+    _analysis: TestAnalysis | None = field(
+        init=False,
+        default=None,
+    )
 
     def run(self) -> TestAnalysis:
 
@@ -68,7 +76,41 @@ class Analyzer:
             ),
         )
 
-        return TestAnalysis(
+        self._analysis = TestAnalysis(
             fit_analyses=fit_analyses,
             selected_fit=selected_fit,
         )
+
+        return self._analysis
+
+    @property
+    def analysis(self) -> TestAnalysis:
+        """
+        Liefert das zuletzt berechnete Analyseergebnis.
+        """
+
+        if self._analysis is None:
+            raise RuntimeError(
+                "Es wurde noch keine Analyse ausgeführt."
+            )
+
+        return self._analysis
+
+    def plot(self) -> None:
+        """
+        Führt den internen Plotter mit dem zuletzt
+        berechneten Analyseergebnis aus.
+        """
+
+        if self._analysis is None:
+            raise RuntimeError(
+                "Vor plot() muss run() ausgeführt werden."
+            )
+
+        plotter = TestPlotter()
+
+        for fit_analysis in self._analysis.fit_analyses:
+            plotter.plot(
+                context=self.context,
+                analysis=fit_analysis,
+            )

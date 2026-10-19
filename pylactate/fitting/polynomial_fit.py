@@ -16,7 +16,12 @@ class PolynomialFit(FitStrategy):
     def __init__(
         self,
         degree: int = 3,
+        extrapolation_factor: float = 0.2,
     ) -> None:
+
+        super().__init__(
+            extrapolation_factor=extrapolation_factor
+        )
         if degree < 1:
             raise ValueError(
                 "Der Polynomgrad muss >= 1 sein."
@@ -162,9 +167,11 @@ class PolynomialFit(FitStrategy):
             )
         )
 
+        x_range = x.max() - x.min()
+
         x_dense = np.linspace(
-            x.min(),
-            x.max(),
+            x.min() - self.extrapolation_factor * x_range,
+            x.max() + self.extrapolation_factor * x_range,
             500,
         )
 

@@ -142,6 +142,9 @@ class AnalysisSession:
 
         measurement.point_class = point_class
 
+        if point_class == PointClass.PRELOAD:
+            measurement.included_in_fit = False
+
     def assign_loads(
         self,
         loads: list[float] | None = None,
