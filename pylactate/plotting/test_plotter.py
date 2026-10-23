@@ -61,6 +61,21 @@ class TestPlotter:
             zorder=3,
         )
 
+        # Monte-Carlo-Unsicherheitsband
+        if (
+            fit_result.lower_band is not None
+            and fit_result.upper_band is not None
+        ):
+            plt.fill_between(
+                fit_result.x_dense,
+                fit_result.lower_band,
+                fit_result.upper_band,
+                color="tab:orange",
+                alpha=0.2,
+                label="95% Konfidenzband",
+                zorder=2,
+            )
+
         colors = {
             ThresholdType.LT1: "tab:green",
             ThresholdType.LT2: "tab:red",

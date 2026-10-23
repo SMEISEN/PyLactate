@@ -5,6 +5,7 @@ from .methods.gompertz_fit import GompertzFit
 from .methods.weighted_polynomial_fit import WeightedPolynomialFit
 from .methods.weighted_gompertz_fit import WeightedGompertzFit
 from .methods.weighted_spline_fit import WeightedSplineFit
+from .sampler.monte_carlo_fit import MonteCarloFit
 
 __all__ = [
     "FitStrategy",
@@ -13,5 +14,6 @@ __all__ = [
     "GompertzFit",
     "WeightedPolynomialFit",
     "WeightedGompertzFit",
-    "WeightedSplineFit"
+    "WeightedSplineFit",
+    "MonteCarloFit"
 ]
