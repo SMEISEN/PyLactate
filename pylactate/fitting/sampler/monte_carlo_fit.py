@@ -60,9 +60,13 @@ class MonteCarloFit(FitStrategy):
 
         simulation_curves: list[np.ndarray] = []
 
+        simulation_results: list[FitResult] = []
+
         reference_result: FitResult | None = None
 
         rng = np.random.default_rng()
+
+        simulation_curves: list[np.ndarray] = []
 
         for _ in range(self.simulations):
 
@@ -119,6 +123,10 @@ class MonteCarloFit(FitStrategy):
                 simulated_context,
             )
 
+            simulation_results.append(
+                result
+            )
+
             if reference_result is None:
                 reference_result = result
 
@@ -163,4 +171,5 @@ class MonteCarloFit(FitStrategy):
             confidence_score=reference_result.confidence_score,
             lower_band=lower_band,
             upper_band=upper_band,
+            simulation_results=simulation_results,
         )

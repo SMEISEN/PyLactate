@@ -109,6 +109,20 @@ class TestPlotter:
             + 4
         )
 
+        show_ci_bands = (
+            len(
+                analysis.thresholds[
+                    ThresholdType.LT1
+                ]
+            ) == 1
+            and
+            len(
+                analysis.thresholds[
+                    ThresholdType.LT2
+                ]
+            ) == 1
+        )
+
         for threshold_type, results in (
             analysis.thresholds.items()
         ):
@@ -124,6 +138,24 @@ class TestPlotter:
                     idx % len(markers)
                 ]
 
+                if (
+                    result.load_ci_lower is not None
+                    and result.load_ci_upper is not None
+                ):
+                    label = (
+                        f"{result.method_name:<{max_name_length}}"
+                        f"{result.load:.1f}"
+                        f" ({result.load_ci_lower:.1f}"
+                        f"-{result.load_ci_upper:.1f}) "
+                        f"{load_unit}"
+                    )
+                else:
+                    label = (
+                        f"{result.method_name:<{max_name_length}}"
+                        f"{result.load:.1f} "
+                        f"{load_unit}"
+                    )
+
                 plt.scatter(
                     result.load,
                     result.lactate,
@@ -133,11 +165,21 @@ class TestPlotter:
                     edgecolors="black",
                     linewidth=0.7,
                     zorder=10,
-                    label=(
-                        f"{result.method_name:<{max_name_length}}"
-                        f"{result.load:.1f} {load_unit}"
-                    ),
+                    label=label,
                 )
+
+                if (
+                    show_ci_bands
+                    and result.load_ci_lower is not None
+                    and result.load_ci_upper is not None
+                ):
+                    plt.axvspan(
+                        result.load_ci_lower,
+                        result.load_ci_upper,
+                        color=color,
+                        alpha=0.08,
+                        zorder=1,
+                    )
 
                 plt.axvline(
                     result.load,

@@ -19,6 +19,18 @@ class ThresholdResult:
 
     heart_rate: float | None
 
+    load_std: float | None = None
+    load_ci_lower: float | None = None
+    load_ci_upper: float | None = None
+
+    lactate_std: float | None = None
+    lactate_ci_lower: float | None = None
+    lactate_ci_upper: float | None = None
+
+    heart_rate_std: float | None = None
+    heart_rate_ci_lower: float | None = None
+    heart_rate_ci_upper: float | None = None
+
 
 @dataclass(slots=True)
 class FitResult:
@@ -39,6 +51,12 @@ class FitResult:
     rmse: float
 
     confidence_score: float
+
+    lower_band: np.ndarray | None = None
+
+    upper_band: np.ndarray | None = None
+
+    simulation_results: list["FitResult"] | None = None
 
 
 @dataclass(slots=True)
