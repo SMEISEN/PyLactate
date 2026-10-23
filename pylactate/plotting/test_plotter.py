@@ -76,9 +76,22 @@ class TestPlotter:
             "X",
         ]
 
-        max_y = max(
-            max(y),
-            max(fit_result.y_dense),
+        # maximale Länge für tabellenartige Legendeneinträge
+        threshold_results = [
+            result
+            for results in analysis.thresholds.values()
+            for result in results
+        ]
+
+        max_name_length = (
+            max(
+                (
+                    len(r.method_name)
+                    for r in threshold_results
+                ),
+                default=0,
+            )
+            + 4
         )
 
         for threshold_type, results in (
@@ -88,12 +101,6 @@ class TestPlotter:
             color = colors.get(
                 threshold_type,
                 "gray",
-            )
-
-            label_y = (
-                max_y * 0.80
-                if threshold_type == ThresholdType.LT1
-                else max_y * 0.95
             )
 
             for idx, result in enumerate(results):
@@ -112,7 +119,8 @@ class TestPlotter:
                     linewidth=0.7,
                     zorder=10,
                     label=(
-                        result.method_name
+                        f"{result.method_name:<{max_name_length}}"
+                        f"{result.load:.1f} {load_unit}"
                     ),
                 )
 
@@ -122,26 +130,6 @@ class TestPlotter:
                     linestyle="--",
                     linewidth=1.5,
                     alpha=0.4,
-                )
-
-                plt.text(
-                    result.load + 0.7,
-                    label_y - idx * 0.25,
-                    (
-                        f"{result.method_name}\n"
-                        f"{result.load:.1f} "
-                        f"{load_unit}"
-                    ),
-                    color=color,
-                    fontsize=8,
-                    ha="left",
-                    va="center",
-                    bbox=dict(
-                        facecolor="white",
-                        edgecolor=color,
-                        alpha=0.8,
-                        boxstyle="round,pad=0.3",
-                    ),
                 )
 
         plt.xlabel(
@@ -174,6 +162,10 @@ class TestPlotter:
             unique.values(),
             unique.keys(),
             loc="upper left",
+            prop={
+                "family": "monospace",
+            },
+            framealpha=0.95,
         )
 
         plt.tight_layout()
