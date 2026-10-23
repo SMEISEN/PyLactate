@@ -1,58 +1,43 @@
 from __future__ import annotations
 
 import numpy as np
-from scipy.optimize import curve_fit
 
 from pylactate.analysis.context import AnalysisContext
 from pylactate.analysis.results import FitResult
 from pylactate.analysis.selector import MeasurementSelector
 from pylactate.fitting.base import FitStrategy
+from pylactate.fitting.models.polynominal import polynomial
 
 
-class GompertzFit(FitStrategy):
+class PolynomialFit(FitStrategy):
     """
-    Gompertz-Fit für Laktatkurven.
-
-    Modell:
-
-        y = a * exp(-b * exp(-c * x))
-
-    mit:
-        a = obere Asymptote
-        b = Verschiebung
-        c = Wachstumsrate
+    Polynomieller Fit auf Basis von numpy.polyfit().
     """
 
     def __init__(
         self,
+        degree: int = 3,
         extrapolation_factor: float = 0.2,
     ) -> None:
+
         super().__init__(
-            extrapolation_factor=extrapolation_factor,
+            extrapolation_factor=extrapolation_factor
         )
+        if degree < 1:
+            raise ValueError(
+                "Der Polynomgrad muss >= 1 sein."
+            )
 
-        self.name = "Gompertz"
+        self.degree = degree
 
-    @staticmethod
-    def _gompertz(
-        x: np.ndarray,
-        a: float,
-        b: float,
-        c: float,
-    ) -> np.ndarray:
-        """
-        Gompertz-Funktion.
-        """
-        return a * np.exp(
-            -b * np.exp(-c * x)
-        )
+        self.name = f"Polynomial Degree {degree}"
 
     def fit(
         self,
         context: AnalysisContext,
     ) -> FitResult:
         """
-        Führt einen Gompertz-Fit durch.
+        Führt einen polynomialen Fit durch.
 
         Args:
             context:
@@ -67,6 +52,13 @@ class GompertzFit(FitStrategy):
         measurements = selector.get_fit_measurements(
             context.session
         )
+
+        if len(measurements) < self.degree + 1:
+            raise ValueError(
+                f"Mindestens {self.degree + 1} "
+                f"Messpunkte erforderlich "
+                f"für Grad {self.degree}."
+            )
 
         x = np.array(
             [
@@ -84,16 +76,19 @@ class GompertzFit(FitStrategy):
             dtype=float,
         )
 
+        # Leere Datenmenge
         if len(x) == 0:
             raise ValueError(
                 "Keine Messpunkte für den Fit vorhanden."
             )
 
+        # Gleich viele x- und y-Werte
         if len(x) != len(y):
             raise ValueError(
                 "Anzahl von x- und y-Werten stimmt nicht überein."
             )
 
+        # NaN prüfen
         if np.isnan(x).any():
             raise ValueError(
                 "Laststufen enthalten NaN-Werte."
@@ -104,6 +99,7 @@ class GompertzFit(FitStrategy):
                 "Laktatwerte enthalten NaN-Werte."
             )
 
+        # Infinite Werte prüfen
         if np.isinf(x).any():
             raise ValueError(
                 "Laststufen enthalten unendliche Werte."
@@ -114,69 +110,42 @@ class GompertzFit(FitStrategy):
                 "Laktatwerte enthalten unendliche Werte."
             )
 
+        # Unterschiedliche Laststufen prüfen
         unique_x = np.unique(x)
 
-        if len(unique_x) < 3:
+        if len(unique_x) < 2:
             raise ValueError(
-                "Für den Gompertz-Fit werden mindestens "
-                "drei unterschiedliche Laststufen benötigt."
+                "Für einen Fit werden mindestens zwei "
+                "unterschiedliche Laststufen benötigt."
             )
 
-        order = np.argsort(x)
+        # Für Grad n werden mindestens n+1 unterschiedliche
+        # Stützpunkte benötigt
 
-        x = x[order]
-        y = y[order]
-
-        p0 = [
-            max(y) * 1.2,
-            1.0,
-            0.01,
-        ]
-
-        lower_bounds = [
-            0.0,
-            0.0,
-            0.0,
-        ]
-
-        upper_bounds = [
-            np.inf,
-            np.inf,
-            np.inf,
-        ]
+        if len(unique_x) < self.degree + 1:
+            raise ValueError(
+                f"Polynomgrad {self.degree} benötigt "
+                f"mindestens {self.degree + 1} "
+                "unterschiedliche Laststufen."
+            )
 
         try:
-            parameters, _ = curve_fit(
-                self._gompertz,
-                x,
-                y,
-                p0=p0,
-                bounds=(
-                    lower_bounds,
-                    upper_bounds,
-                ),
-                maxfev=10000,
+            model = polynomial(
+                x=x,
+                y=y,
+                degree=self.degree
             )
-        except RuntimeError as exc:
+        except np.linalg.LinAlgError as exc:
             raise ValueError(
-                "Gompertz-Fit konnte nicht berechnet werden."
+                "Gewichteter Polynomfit konnte "
+                "nicht berechnet werden."
             ) from exc
-
-        def model(
-            values: np.ndarray,
-        ) -> np.ndarray:
-            return self._gompertz(
-                values,
-                *parameters,
-            )
 
         y_pred = model(x)
 
         residuals = y - y_pred
 
-        ss_res = np.sum(
-            residuals ** 2
-        )
+        ss_res = np.sum(residuals ** 2)
 
         ss_tot = np.sum(
             (y - np.mean(y)) ** 2
@@ -199,10 +168,8 @@ class GompertzFit(FitStrategy):
         x_range = x.max() - x.min()
 
         x_dense = np.linspace(
-            x.min()
-            - self.extrapolation_factor * x_range,
-            x.max()
-            + self.extrapolation_factor * x_range,
+            x.min() - self.extrapolation_factor * x_range,
+            x.max() + self.extrapolation_factor * x_range,
             500,
         )
 

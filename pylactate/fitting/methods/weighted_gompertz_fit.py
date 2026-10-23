@@ -1,26 +1,23 @@
 from __future__ import annotations
 
 import numpy as np
-from scipy.interpolate import UnivariateSpline
+from scipy.optimize import curve_fit
 
 from pylactate.analysis.context import AnalysisContext
 from pylactate.analysis.results import FitResult
 from pylactate.analysis.selector import MeasurementSelector
 from pylactate.fitting.base import FitStrategy
-from pylactate.fitting.sigma_models import (
+from pylactate.fitting.models.gompertz import gompertz
+from pylactate.fitting.sigma.sigma_models import (
     SigmaFunction,
     lactate_scout_sport_sigma,
 )
 
 
-class WeightedSplineFit(FitStrategy):
+class WeightedGompertzFit(FitStrategy):
     """
-    Gewichteter kubischer Spline-Fit.
-
-    Die Gewichte werden aus den Standardabweichungen
-    der Sigma-Funktion berechnet:
-
-        w = 1 / sigma
+    Gompertz-Fit mit Berücksichtigung
+    der Messunsicherheit.
     """
 
     def __init__(
@@ -29,25 +26,15 @@ class WeightedSplineFit(FitStrategy):
             lactate_scout_sport_sigma
         ),
         extrapolation_factor: float = 0.2,
-        spline_degree: int = 3,
     ) -> None:
 
         super().__init__(
             extrapolation_factor=extrapolation_factor
         )
 
-        if spline_degree < 1 or spline_degree > 5:
-            raise ValueError(
-                "spline_degree muss zwischen "
-                "1 und 5 liegen."
-            )
-
         self.sigma_function = sigma_function
-        self.spline_degree = spline_degree
 
-        self.name = (
-            f"Weighted Spline k={spline_degree}"
-        )
+        self.name = "Weighted Gompertz"
 
     def fit(
         self,
@@ -75,11 +62,6 @@ class WeightedSplineFit(FitStrategy):
             dtype=float,
         )
 
-        order = np.argsort(x)
-
-        x = x[order]
-        y = y[order]
-
         sigma = np.array(
             [
                 self.sigma_function(
@@ -90,15 +72,41 @@ class WeightedSplineFit(FitStrategy):
             dtype=float,
         )
 
-        weights = 1.0 / sigma
+        x_min = np.min(x)
+        x_max = np.max(x)
 
-        model = UnivariateSpline(
-            x=x,
-            y=y,
-            w=weights,
-            k=self.spline_degree,
-            s=None,
+        x_scaled = (x - x_min) / (x_max - x_min)
+
+        params, _ = curve_fit(
+            gompertz,
+            x_scaled,
+            y,
+            p0=[np.max(y) * 1.5, 3.0, 5.0],
+            bounds=(
+                [0.0, 0.0, 0.0],
+                [
+                    np.max(y) * 10.0,
+                    20.0,
+                    20.0,
+                ],
+            ),
+            sigma=sigma,
+            absolute_sigma=True,
+            maxfev=50000,
         )
+
+        def model(
+            values: np.ndarray,
+        ) -> np.ndarray:
+            values_scaled = (
+                values - x_min
+            ) / (
+                x_max - x_min
+            )
+            return gompertz(
+                values_scaled,
+                *params,
+            )
 
         y_pred = model(x)
 
@@ -138,7 +146,9 @@ class WeightedSplineFit(FitStrategy):
             500,
         )
 
-        y_dense = model(x_dense)
+        y_dense = model(
+            x_dense
+        )
 
         confidence_score = max(
             0.0,

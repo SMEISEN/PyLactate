@@ -6,7 +6,8 @@ from pylactate.analysis.context import AnalysisContext
 from pylactate.analysis.results import FitResult
 from pylactate.analysis.selector import MeasurementSelector
 from pylactate.fitting.base import FitStrategy
-from pylactate.fitting.sigma_models import (
+from pylactate.fitting.models.polynominal import weighted_polynomial
+from pylactate.fitting.sigma.sigma_models import (
     SigmaFunction,
     lactate_scout_sport_sigma,
 )
@@ -166,21 +167,17 @@ class WeightedPolynomialFit(FitStrategy):
         weights = 1.0 / sigma
 
         try:
-            coefficients = np.polyfit(
-                x,
-                y,
-                deg=self.degree,
-                w=weights,
+            model = weighted_polynomial(
+                x=x,
+                y=y,
+                degree=self.degree,
+                weights=weights,
             )
         except np.linalg.LinAlgError as exc:
             raise ValueError(
                 "Gewichteter Polynomfit konnte "
                 "nicht berechnet werden."
             ) from exc
-
-        model = np.poly1d(
-            coefficients
-        )
 
         y_pred = model(x)
 
